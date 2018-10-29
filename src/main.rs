@@ -23,6 +23,7 @@ fn main() {
                 .long("debug")
                 .help("Enable debug"),
         ).subcommand(SubCommand::with_name("check").about("check if device is present"))
+        .subcommand(SubCommand::with_name("listen").about("listen for key changes"))
         .subcommand(
             SubCommand::with_name("set-color")
                 .about("set color")
@@ -41,6 +42,8 @@ fn main() {
 
     if let Some(_) = matches.subcommand_matches("check") {
         cli::check().unwrap();
+    } else if let Some(_) = matches.subcommand_matches("listen") {
+        cli::listen().unwrap();
     } else if let Some(sub_matches) = matches.subcommand_matches("set-color") {
         let key_index =  sub_matches.value_of("key").unwrap().parse::<u8>().unwrap();
         let color = Color::parse(sub_matches.value_of("color").unwrap()).unwrap();

@@ -6,6 +6,7 @@ mod color;
 
 pub use self::color::*;
 
+const NUM_KEYS: usize = 15;
 const VENDOR_ID: u16 = 0x0fd9;
 const PRODUCT_ID: u16 = 0x0060;
 const PAGE_PACKET_SIZE: usize = 8191;
@@ -47,6 +48,20 @@ impl StreamDeck {
         }
 
         self.write_pixels(key_index, &pixels)
+    }
+
+    pub fn wait_for_keys(&self) -> Result<[bool; NUM_KEYS]> {
+        let mut packet = [0u8; PAGE_PACKET_SIZE];
+
+        self.device.read(&mut packet)?;
+
+        let mut result = [false; NUM_KEYS];
+
+        for i in 0..NUM_KEYS {
+            result[i] = packet[i + 1] != 0u8;
+        }
+
+        Ok(result)
     }
 
     fn write_pixels(&self, key_index: u8, pixels: &[u8]) -> Result<()> {
