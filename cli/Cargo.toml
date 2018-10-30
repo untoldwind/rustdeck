@@ -1,0 +1,13 @@
+[package]
+name = "rustdeck-cli"
+version = "0.1.0"
+authors = ["Bodo Junglas <junglas@objectcode.de>"]
+
+[dependencies]
+hidapi = "0.5"
+clap = "2.32"
+error-chain = "0.12"
+hex = "0.3"
+log = "0.4"
+env_logger = "0.5"
+dbus = "0.6.3"
