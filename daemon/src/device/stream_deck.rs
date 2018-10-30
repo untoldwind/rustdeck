@@ -22,7 +22,7 @@ const HEADER_PAGE2: &[u8] = &[
 ];
 
 pub struct StreamDeck {
-    serial: String,
+    pub serial: String,
     device: HidDevice,
 }
 

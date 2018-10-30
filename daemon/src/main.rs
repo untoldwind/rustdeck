@@ -5,14 +5,12 @@ extern crate env_logger;
 extern crate hidapi;
 #[macro_use]
 extern crate error_chain;
-#[macro_use]
-extern crate lazy_static;
 extern crate dbus;
 
 mod daemon;
+mod dbus_server;
 mod device;
 mod errors;
-mod dbus_server;
 
 use clap::{App, Arg, SubCommand};
 
@@ -36,5 +34,7 @@ fn main() {
     }
     log_builder.init();
 
-    daemon::daemon_loop().expect("Unable to start daemon loop");
+    let daemon: daemon::Daemon = Default::default();
+
+    daemon.run().expect("Unable to start daemon loop");
 }
