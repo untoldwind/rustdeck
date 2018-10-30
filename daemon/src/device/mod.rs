@@ -2,8 +2,11 @@ use errors::Result;
 use hidapi::{HidApi, HidDeviceInfo};
 
 mod color;
+mod key_change;
 mod stream_deck;
 
+pub use self::color::Color;
+pub use self::key_change::KeyChange;
 pub use self::stream_deck::StreamDeck;
 
 const VENDOR_ID: u16 = 0x0fd9;

@@ -2,6 +2,7 @@ use errors::{Error, ErrorKind, Result};
 use hidapi::HidDevice;
 
 use super::color::Color;
+use super::key_change::KeyChange;
 
 const NUM_KEYS: usize = 15;
 const PAGE_PACKET_SIZE: usize = 8191;
@@ -24,6 +25,7 @@ const HEADER_PAGE2: &[u8] = &[
 pub struct StreamDeck {
     pub serial: String,
     device: HidDevice,
+    last_key_state: [bool; NUM_KEYS],
 }
 
 impl StreamDeck {
@@ -32,7 +34,11 @@ impl StreamDeck {
             .get_serial_number_string()?
             .ok_or(Error::from(ErrorKind::NoSerial))?;
 
-        Ok(StreamDeck { serial, device })
+        Ok(StreamDeck {
+            serial,
+            device,
+            last_key_state: [false; NUM_KEYS],
+        })
     }
 
     pub fn set_color(&self, key_index: u8, color: Color) -> Result<()> {
@@ -56,6 +62,28 @@ impl StreamDeck {
 
         for i in 0..NUM_KEYS {
             result[i] = packet[i + 1] != 0u8;
+        }
+
+        Ok(result)
+    }
+
+    pub fn wait_for_key_changes(&mut self, millis: u32) -> Result<Vec<KeyChange>> {
+        let mut packet = [0u8; PAGE_PACKET_SIZE];
+
+        if self.device.read_timeout(&mut packet, millis as i32)? == 0 {
+            return Ok(vec![]);
+        }
+
+        let mut result = Vec::new();
+
+        for i in 0..NUM_KEYS {
+            if !self.last_key_state[i] && packet[i + 1] != 0u8 {
+                result.push(KeyChange::Down(i as u8));
+                self.last_key_state[i] = true;
+            } else if self.last_key_state[i] && packet[i + 1] == 0u8 {
+                result.push(KeyChange::Up(i as u8));
+                self.last_key_state[i] = false;
+            }
         }
 
         Ok(result)

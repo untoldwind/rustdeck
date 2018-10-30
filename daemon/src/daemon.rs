@@ -7,7 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use dbus_server::DbusServer;
-use device::{self, StreamDeck};
+use device::{self, KeyChange, StreamDeck};
 
 pub struct DaemonState {
     pub devices: HashMap<String, StreamDeck>,
@@ -46,7 +46,9 @@ impl Daemon {
                 dbus_server.update_tree()?;
             }
 
-            self.handle_keys();
+            let key_changes = self.handle_keys()?;
+
+            dbus_server.send_key_changes(key_changes)?;
 
             dbus_server.handle_messages();
         }
@@ -79,14 +81,17 @@ impl Daemon {
         Ok(changes)
     }
 
-    fn handle_keys(&self) -> Result<()> {
-        let state_ref = self.state.borrow();
+    fn handle_keys(&self) -> Result<Vec<(String, KeyChange)>> {
+        let mut state_ref = self.state.borrow_mut();
+        let mut result = Vec::new();
 
-        for device in state_ref.devices.values() {
-            device.wait_for_keys(100)?;
+        for (serial, device) in state_ref.devices.iter_mut() {
+            for key_change in device.wait_for_key_changes(100)? {
+                result.push((serial.clone(), key_change))
+            }
         }
 
-        Ok(())
+        Ok(result)
     }
 }
 
@@ -101,8 +106,8 @@ impl Default for Daemon {
 impl DataType for Daemon {
     type Tree = Arc<RefCell<DaemonState>>;
     type ObjectPath = ();
-    type Interface = ();
+    type Interface = Option<String>;
     type Property = ();
-    type Method = Option<String>;
+    type Method = ();
     type Signal = ();
 }
