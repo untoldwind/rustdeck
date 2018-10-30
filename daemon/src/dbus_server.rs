@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use daemon::{Daemon, DaemonState};
-use device::KeyChange;
+use device::{KeyChange, Color};
 use errors::Result;
 
 const DBUS_NAME: &str = "io.github.rustdeck1";
@@ -104,7 +104,11 @@ impl DbusServer {
                     .add_m(
                         self.factory
                             .method("GetSerial", (), Self::get_serial)
-                            .outarg::<&str, _>("devices"),
+                            .outarg::<&str, _>("serial"),
+                    ).add_m(
+                        self.factory
+                            .method("FillColor", (), Self::fill_color)
+                            .inarg::<u8, _>("key").inarg::<u8, _>("red").inarg::<u8, _>("green").inarg::<u8, _>("blue"),
                     ),
             )
     }
@@ -157,5 +161,20 @@ impl DbusServer {
         } else {
             Err(MethodErr::failed(&"No serial"))
         }
+    }
+
+    fn fill_color(m: &MethodInfo<MTFn<Daemon>, Daemon>) -> MethodResult {
+        let serial = m.iface.get_data().as_ref().ok_or(MethodErr::failed(&"No serial"))?;
+        let state_ref = m.tree.get_data().borrow();
+        let device = state_ref.devices.get(serial).ok_or(MethodErr::failed(&"Invalid serial"))?;
+            let (key, red, green, blue) = m.msg.read4::<u8, u8, u8, u8>()?;
+
+        device.set_color(key, Color { red, green, blue }).map_err(|err| {
+            error!("{:?}", err);
+            MethodErr::failed(&"Internal error")
+        } )?;
+        let mret = m.msg.method_return();
+
+        Ok(vec![mret])
     }
 }

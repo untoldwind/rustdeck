@@ -46,9 +46,15 @@ impl Daemon {
                 dbus_server.update_tree()?;
             }
 
-            let key_changes = self.handle_keys()?;
+            loop {
+                let key_changes = self.handle_keys()?;
 
-            dbus_server.send_key_changes(key_changes)?;
+                if key_changes.is_empty() {
+                    break;
+                }
+
+                dbus_server.send_key_changes(key_changes)?;
+            }
 
             dbus_server.handle_messages();
         }
