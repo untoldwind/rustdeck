@@ -1,13 +1,9 @@
-use errors::Result;
-use hidapi::{HidApi, HidDevice};
+use errors::{Error, ErrorKind, Result};
+use hidapi::HidDevice;
 
-mod color;
-
-pub use self::color::*;
+use super::color::Color;
 
 const NUM_KEYS: usize = 15;
-const VENDOR_ID: u16 = 0x0fd9;
-const PRODUCT_ID: u16 = 0x0060;
 const PAGE_PACKET_SIZE: usize = 8191;
 const ICON_SIZE: usize = 72;
 const NUM_FIRST_PAGE_PIXELS: usize = 2583;
@@ -26,17 +22,17 @@ const HEADER_PAGE2: &[u8] = &[
 ];
 
 pub struct StreamDeck {
+    serial: String,
     device: HidDevice,
 }
 
 impl StreamDeck {
-    pub fn open() -> Result<StreamDeck> {
-        let hidapi = HidApi::new()?;
-        let device = hidapi.open(VENDOR_ID, PRODUCT_ID)?;
+    pub fn new(device: HidDevice) -> Result<StreamDeck> {
+        let serial = device
+            .get_serial_number_string()?
+            .ok_or(Error::from(ErrorKind::NoSerial))?;
 
-        println!("{:?}", device.get_serial_number_string());
-
-        Ok(StreamDeck { device })
+        Ok(StreamDeck { serial, device })
     }
 
     pub fn set_color(&self, key_index: u8, color: Color) -> Result<()> {
@@ -51,10 +47,10 @@ impl StreamDeck {
         self.write_pixels(key_index, &pixels)
     }
 
-    pub fn wait_for_keys(&self) -> Result<[bool; NUM_KEYS]> {
+    pub fn wait_for_keys(&self, millis: u32) -> Result<[bool; NUM_KEYS]> {
         let mut packet = [0u8; PAGE_PACKET_SIZE];
 
-        self.device.read(&mut packet)?;
+        self.device.read_timeout(&mut packet, millis as i32)?;
 
         let mut result = [false; NUM_KEYS];
 
@@ -71,7 +67,7 @@ impl StreamDeck {
             key_index,
             &pixels[(NUM_FIRST_PAGE_PIXELS * 3)
                         ..((NUM_FIRST_PAGE_PIXELS + NUM_SECOND_PAGE_PIXELS) * 3)],
-        );
+        )?;
 
         Ok(())
     }

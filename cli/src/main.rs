@@ -45,7 +45,7 @@ fn main() {
     } else if let Some(_) = matches.subcommand_matches("listen") {
         cli::listen().unwrap();
     } else if let Some(sub_matches) = matches.subcommand_matches("set-color") {
-        let key_index =  sub_matches.value_of("key").unwrap().parse::<u8>().unwrap();
+        let key_index = sub_matches.value_of("key").unwrap().parse::<u8>().unwrap();
         let color = Color::parse(sub_matches.value_of("color").unwrap()).unwrap();
         cli::set_color(key_index, color).unwrap();
     }

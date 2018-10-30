@@ -3,10 +3,19 @@ error_chain! {
         Error, ErrorKind, ResultExt, Result;
     }
 
+    foreign_links {
+        DBus(::dbus::Error);
+    }
+
     errors {
         Hidapi(t: ::hidapi::HidError) {
             description("hidapi error")
             display("hidapi error: '{}'", t)
+        }
+
+        NoSerial {
+            description("device has no serial number")
+            display("device has no serial number")
         }
 
         InvalidColorFormat {
