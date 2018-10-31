@@ -6,8 +6,9 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use daemon::{Daemon, DaemonState};
-use device::{Color, KeyChange};
+use device::{Color, KeyChange, StreamDeck};
 use errors::Result;
+use image::{self, ImageFormat};
 
 const DBUS_NAME: &str = "io.github.rustdeck1";
 
@@ -50,7 +51,7 @@ impl DbusServer {
         );
         let devices_object = Arc::new(
             factory
-                .object_path("/device", ())
+                .object_path("/devices", ())
                 .introspectable()
                 .add(devices_interface.clone()),
         );
@@ -112,6 +113,12 @@ impl DbusServer {
                             .inarg::<u8, _>("red")
                             .inarg::<u8, _>("green")
                             .inarg::<u8, _>("blue"),
+                    ).add_m(
+                        self.factory
+                            .method("SetImage", (), Self::set_image)
+                            .inarg::<u8, _>("key")
+                            .inarg::<&str, _>("format")
+                            .inarg::<&[u8], _>("data"),
                     ),
             )
     }
@@ -166,7 +173,10 @@ impl DbusServer {
         }
     }
 
-    fn fill_color(m: &MethodInfo<MTFn<Daemon>, Daemon>) -> MethodResult {
+    fn for_device<F>(m: &MethodInfo<MTFn<Daemon>, Daemon>, f: F) -> MethodResult
+    where
+        F: FnOnce(&StreamDeck) -> Result<()>,
+    {
         let serial = m
             .iface
             .get_data()
@@ -177,16 +187,40 @@ impl DbusServer {
             .devices
             .get(serial)
             .ok_or(MethodErr::failed(&"Invalid serial"))?;
-        let (key, red, green, blue) = m.msg.read4::<u8, u8, u8, u8>()?;
 
-        device
-            .set_color(key, Color { red, green, blue })
-            .map_err(|err| {
+        f(device).map_err(|err| {
                 error!("{:?}", err);
                 MethodErr::failed(&"Internal error")
             })?;
+
         let mret = m.msg.method_return();
 
         Ok(vec![mret])
+
+    }
+
+    fn fill_color(m: &MethodInfo<MTFn<Daemon>, Daemon>) -> MethodResult {
+        let (key, red, green, blue) = m.msg.read4::<u8, u8, u8, u8>()?;
+        Self::for_device(m, |device| {
+            device.set_color(key, Color { red, green, blue })
+
+        })
+    }
+
+    fn set_image(m: &MethodInfo<MTFn<Daemon>, Daemon>) -> MethodResult {
+        let (key, format, data) = m.msg.read3::<u8, &str, &[u8]>()?;
+        let image_format = match format {
+            "png" => ImageFormat::PNG,
+            "pnm" => ImageFormat::PNM,
+            "jpg" => ImageFormat::JPEG,
+            "gif" => ImageFormat::GIF,
+            "ico" => ImageFormat::ICO,
+            _ => return Err(MethodErr::invalid_arg(&"Invalid image format")),
+        };
+        Self::for_device(m, |device| {
+            let image = image::load_from_memory(data)?;
+
+            device.set_image(key, image)
+        })
     }
 }

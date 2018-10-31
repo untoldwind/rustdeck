@@ -5,6 +5,7 @@ error_chain! {
 
     foreign_links {
         DBus(::dbus::Error);
+        Image(::image::ImageError);
     }
 
     errors {

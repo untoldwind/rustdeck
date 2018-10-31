@@ -1,5 +1,6 @@
 use errors::{Error, ErrorKind, Result};
 use hidapi::HidDevice;
+use image::{DynamicImage, FilterType, GenericImageView};
 
 use super::color::Color;
 use super::key_change::KeyChange;
@@ -48,6 +49,26 @@ impl StreamDeck {
             pixels[3 * i] = color.blue;
             pixels[3 * i + 1] = color.green;
             pixels[3 * i + 2] = color.red;
+        }
+
+        self.write_pixels(key_index, &pixels)
+    }
+
+    pub fn set_image(&self, key_index: u8, mut image: DynamicImage) -> Result<()> {
+        let (width, height) = image.dimensions();
+        if width != ICON_SIZE as u32 || height != ICON_SIZE as u32 {
+            image = image.resize_to_fill(ICON_SIZE as u32, ICON_SIZE as u32, FilterType::Triangle)
+        }
+        let rgb_image = image.to_rgb();
+
+        let mut pixels = [0u8; ICON_SIZE * ICON_SIZE * 3];
+
+        for (x, y, pixel) in rgb_image.enumerate_pixels() {
+            let offset = (y as usize + 1) * ICON_SIZE * 3 - (x as usize + 1) * 3;
+
+            pixels[offset] = pixel[2];
+            pixels[offset + 1] = pixel[1];
+            pixels[offset + 2] = pixel[0];
         }
 
         self.write_pixels(key_index, &pixels)
