@@ -35,6 +35,7 @@ impl StreamDeck {
             .get_serial_number_string()?
             .ok_or(Error::from(ErrorKind::NoSerial))?;
 
+        device.set_blocking_mode(false)?;
         Ok(StreamDeck {
             serial,
             device,
@@ -88,10 +89,10 @@ impl StreamDeck {
         Ok(result)
     }
 
-    pub fn wait_for_key_changes(&mut self, millis: u32) -> Result<Vec<KeyChange>> {
+    pub fn wait_for_key_changes(&mut self) -> Result<Vec<KeyChange>> {
         let mut packet = [0u8; PAGE_PACKET_SIZE];
 
-        if self.device.read_timeout(&mut packet, millis as i32)? == 0 {
+        if self.device.read(&mut packet)? == 0 {
             return Ok(vec![]);
         }
 

@@ -38,12 +38,17 @@ impl Daemon {
     pub fn run(&self) -> Result<()> {
         let mut hidapi = HidApi::new()?;
         let mut dbus_server = DbusServer::new(self.state.clone())?;
+        let mut count = 20u32;
 
         loop {
-            let changes = self.scan_devices(&mut hidapi)?;
+            count += 1;
+            if count > 20u32 {
+                let changes = self.scan_devices(&mut hidapi)?;
 
-            if changes {
-                dbus_server.update_tree()?;
+                if changes {
+                    dbus_server.update_tree()?;
+                }
+                count = 0
             }
 
             loop {
@@ -92,7 +97,7 @@ impl Daemon {
         let mut result = Vec::new();
 
         for (serial, device) in state_ref.devices.iter_mut() {
-            for key_change in device.wait_for_key_changes(100)? {
+            for key_change in device.wait_for_key_changes()? {
                 result.push((serial.clone(), key_change))
             }
         }
