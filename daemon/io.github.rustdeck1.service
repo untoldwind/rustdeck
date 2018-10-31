@@ -1,0 +1,5 @@
+[D-BUS Service]
+Name=io.github.rustdeck1
+Exec=/usr/bin/rustdeck-daemon
+User=root
+SystemdService=rustdeck-daemon.service

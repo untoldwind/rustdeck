@@ -2,3 +2,5 @@
 **/*.rs.bk
 *.iml
 .idea/
+pkg/
+*.tar.xz

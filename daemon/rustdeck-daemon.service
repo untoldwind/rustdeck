@@ -1,0 +1,11 @@
+[Unit]
+Description=Driver for Elgato StreamDeck
+
+[Service]
+Type=dbus
+BusName=io.github.rustdeck1
+ExecStart=/usr/bin/rustdeck-daemon
+Restart=on-abort
+
+[Install]
+Alias=dbus-io.github.rustdeck1.service
