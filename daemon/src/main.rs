@@ -6,6 +6,7 @@ extern crate hidapi;
 #[macro_use]
 extern crate error_chain;
 extern crate dbus;
+extern crate image;
 
 mod daemon;
 mod dbus_server;

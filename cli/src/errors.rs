@@ -3,6 +3,11 @@ error_chain! {
         Error, ErrorKind, ResultExt, Result;
     }
 
+    foreign_links {
+        Image(::image::ImageError);
+        Io(::std::io::Error);
+    }
+
     errors {
         Hidapi(t: ::hidapi::HidError) {
             description("hidapi error")

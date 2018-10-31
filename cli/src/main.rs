@@ -5,6 +5,7 @@ extern crate env_logger;
 extern crate hidapi;
 #[macro_use]
 extern crate error_chain;
+extern crate image;
 
 mod cli;
 mod device;
@@ -29,6 +30,11 @@ fn main() {
                 .about("set color")
                 .arg(Arg::with_name("key").required(true))
                 .arg(Arg::with_name("color").required(true)),
+        ).subcommand(
+            SubCommand::with_name("set-image")
+                .about("set image")
+                .arg(Arg::with_name("key").required(true))
+                .arg(Arg::with_name("image-file").required(true)),
         ).get_matches();
 
     let mut log_builder = env_logger::Builder::from_default_env();
@@ -48,5 +54,9 @@ fn main() {
         let key_index = sub_matches.value_of("key").unwrap().parse::<u8>().unwrap();
         let color = Color::parse(sub_matches.value_of("color").unwrap()).unwrap();
         cli::set_color(key_index, color).unwrap();
+    } else if let Some(sub_matches) = matches.subcommand_matches("set-image") {
+        let key_index = sub_matches.value_of("key").unwrap().parse::<u8>().unwrap();
+        let image_file_name = sub_matches.value_of("image-file").unwrap();
+        cli::set_image(key_index, image_file_name).unwrap();
     }
 }
