@@ -1,5 +1,5 @@
 use errors::Result;
-use hidapi::{HidApi, HidDevice};
+use hidapi::{HidApi, HidDevice, HidDeviceInfo};
 use image::{DynamicImage, FilterType, GenericImageView};
 
 mod color;
@@ -120,4 +120,17 @@ impl StreamDeck {
 
         Ok(())
     }
+}
+
+
+pub fn scan_devices() -> Result<Vec<HidDeviceInfo>> {
+        let mut hidapi = HidApi::new()?;
+    hidapi.refresh_devices()?;
+
+    Ok(hidapi
+        .devices()
+        .iter()
+        .filter(|device_info| {
+            device_info.vendor_id == VENDOR_ID && device_info.product_id == PRODUCT_ID
+        }).cloned().collect())
 }

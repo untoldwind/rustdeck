@@ -72,16 +72,16 @@ impl Daemon {
         let mut changes = false;
         let mut obsoletes: HashSet<String> = state_ref.devices.keys().cloned().collect();
 
-        for (serial, device_info) in device::scan_devices(hidapi)? {
-            obsoletes.remove(&serial);
-            if state_ref.devices.contains_key(&serial) {
+        for (id, device_info) in device::scan_devices(hidapi)? {
+            obsoletes.remove(&id);
+            if state_ref.devices.contains_key(&id) {
                 continue;
             }
-            info!("Adding device: {}", serial);
+            info!("Adding device: {}", id);
             let stream_deck = StreamDeck::new(device_info.open_device(hidapi)?)?;
             state_ref
                 .devices
-                .insert(stream_deck.serial.clone(), stream_deck);
+                .insert(id.clone(), stream_deck);
             changes = true;
         }
         for obsolete in obsoletes {

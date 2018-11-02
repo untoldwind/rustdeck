@@ -20,8 +20,8 @@ pub fn scan_devices(hidapi: &mut HidApi) -> Result<Vec<(String, HidDeviceInfo)>>
         .iter()
         .filter(|device_info| {
             device_info.vendor_id == VENDOR_ID && device_info.product_id == PRODUCT_ID
-        }).flat_map(|device_info| match &device_info.serial_number {
-            Some(serial) => Some((serial.clone(), device_info.clone())),
-            None => None,
+        }).map(|device_info| match &device_info.serial_number {
+            Some(serial) => (serial.clone(), device_info.clone()),
+            None => (device_info.path.clone().into_string().unwrap().replace(":", "_"), device_info.clone()),
         }).collect())
 }

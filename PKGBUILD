@@ -1,6 +1,6 @@
 pkgname=rustdeck
 pkgver=0.1
-pkgrel=3
+pkgrel=5
 pkgdesc="Driver and tools for Elgato StreamDeck"
 arch=('x86_64')
 url="https://github.com/untoldwind/rustdeck"
